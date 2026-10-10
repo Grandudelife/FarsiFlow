@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-07T11:05:12.583Z",
+  "browser": "143.0.7499.4",
+  "method": "Real Chromium renderer; extension APIs mocked; controlled adapters, not live accounts",
+  "nativeMV3IntegrationTested": false,
+  "liveAuthenticatedSitesTested": false,
+  "results": [
+    {
+      "name": "paragraph language, English-leading Persian, list and table cells",
+      "status": "PASS"
+    },
+    {
+      "name": "font is loaded with Persian-only Unicode range; Latin fallback preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "code, inline code, formula, links and emails isolated LTR",
+      "status": "PASS"
+    },
+    {
+      "name": "no text edits, no hidden controls, no table column or flex layout reversal",
+      "status": "PASS"
+    },
+    {
+      "name": "editor direction auto without password/email styling",
+      "status": "PASS"
+    },
+    {
+      "name": "streaming, inserted paragraphs and deleted nodes handled",
+      "status": "PASS"
+    },
+    {
+      "name": "120% scale and line height remain stable after repeated mutations",
+      "status": "PASS"
+    },
+    {
+      "name": "settings changes restore old styling before applying new font",
+      "status": "PASS"
+    },
+    {
+      "name": "per-site CSS exclusions restore selected content and retain other prose",
+      "status": "PASS"
+    },
+    {
+      "name": "disabling restores original editor attributes and all style markers",
+      "status": "PASS"
+    },
+    {
+      "name": "reinjecting is idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "chatgpt.com message selector adapter",
+      "status": "PASS"
+    },
+    {
+      "name": "gemini.google.com message selector adapter",
+      "status": "PASS"
+    },
+    {
+      "name": "claude.ai message selector adapter",
+      "status": "PASS"
+    },
+    {
+      "name": "strict page style/font CSP still allows byte fonts and constructed CSS",
+      "status": "PASS"
+    },
+    {
+      "name": "uploaded font bytes load inside a content document",
+      "status": "PASS"
+    },
+    {
+      "name": "revoking site permission stops rendering and restores the page",
+      "status": "PASS"
+    },
+    {
+      "name": "options saves display defaults through actual UI",
+      "status": "PASS"
+    },
+    {
+      "name": "AI access request occurs inside a user gesture",
+      "status": "PASS"
+    },
+    {
+      "name": "file upload validates font and stores bytes locally",
+      "status": "PASS"
+    },
+    {
+      "name": "demo keeps source text identical across display modes",
+      "status": "PASS"
+    },
+    {
+      "name": "all fixture and UI pages have zero uncaught errors",
+      "status": "PASS"
+    }
+  ]
+}

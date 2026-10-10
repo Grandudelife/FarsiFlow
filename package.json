@@ -1,0 +1,8 @@
+{
+  "name": "farsiflow",
+  "version": "1.0.4",
+  "private": true,
+  "description": "Local-first Persian typography and bidirectional reading extension",
+  "scripts": {"test": "node --test tests/core.test.cjs tests/background.test.cjs tests/content-font.test.cjs tests/content-startup.test.cjs", "test:renderer": "node tests/renderer.cjs", "test:browser": "node tests/browser.cjs", "package": "python3 tools/package.py"},
+  "devDependencies": {"playwright": "1.62.1"}
+}

@@ -1,0 +1,65 @@
+/* Actual Chromium renderer, with Chrome extension APIs mocked. Run alongside browser.cjs
+   in a normal Chrome-capable environment to verify the native MV3 integration as well. */
+const {chromium}=require('playwright'),fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),C=require('../extension/core.js');const results=[];let browser;
+async function check(name,fn){await fn();results.push({name,status:'PASS'});console.log('PASS',name);}
+const mock=require('./chrome-mock.cjs');
+
+(async()=>{
+  browser=await chromium.launch({headless:true,...(process.env.FARSIFLOW_CHROME?{executablePath:process.env.FARSIFLOW_CHROME}:{}),args:['--no-sandbox']});
+  const context=await browser.newContext({viewport:{width:1280,height:800}}),errors=[];context.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));
+  const fixture=fs.readFileSync(path.join(__dirname,'fixture.html'),'utf8');
+  await context.route(/^https?:\/\//,async route=>{
+    const url=new URL(route.request().url());
+    if(url.pathname.startsWith('/extension/')){
+      const relative=url.pathname.slice(11),p=path.join(root,'extension',relative);
+      if(!p.startsWith(path.join(root,'extension')) || !fs.existsSync(p)){await route.fulfill({status:404,body:''});return;}
+      const type=relative.endsWith('.css')?'text/css':relative.endsWith('.js')?'application/javascript':relative.endsWith('.html')?'text/html':relative.endsWith('.png')?'image/png':'font/woff2';
+      await route.fulfill({contentType:type,body:fs.readFileSync(p)});return;
+    }
+    let html=fixture;if(url.hostname==='gemini.google.com')html=html.replace('class="markdown"','class="model-response-text"');if(url.hostname==='claude.ai')html=html.replace('class="markdown"','class="font-claude-response standard-markdown"');
+    await route.fulfill({contentType:'text/html',body:html,headers:url.pathname==='/csp'?{'Content-Security-Policy':"default-src 'none'; style-src 'none'; font-src 'none'; connect-src 'self'"}:{}});
+  });
+  const page=await context.newPage();await page.addInitScript(mock,{config:C.DEFAULTS});
+  async function load(url='https://chatgpt.com/fixture') {await page.goto(url);const original=await page.locator('#root').textContent();await page.evaluate(fs.readFileSync(path.join(root,'extension/core.js'),'utf8'));await page.evaluate(fs.readFileSync(path.join(root,'extension/content.js'),'utf8'));await page.waitForFunction(()=>document.querySelector('#fa').dataset.ffDir==='rtl');return original;}
+  const original=await load();
+  await check('Persian messages and editor use selected font with emoji/symbol fallback families',async()=>{
+    for(const id of ['linkedin-message','linkedin-preview','linkedin-editor','linkedin-hidden-message','linkedin-hidden-preview','linkedin-editor-paragraph']) {
+      assert.equal(await page.locator('#'+id).getAttribute('data-ff-font'),'');
+      assert.match(await page.locator('#'+id).evaluate(e=>getComputedStyle(e).fontFamily),/^FarsiFlow_vazirmatn,/);
+    }
+    for(const id of ['linkedin-english','linkedin-icon'])assert.equal(await page.locator('#'+id).getAttribute('data-ff-font'),null);
+  });
+  await check('host inline important font replacement is corrected without a mutation loop',async()=>{
+    await page.locator('#linkedin-hidden-message').evaluate(e=>e.style.setProperty('font-family','Georgia, serif','important'));
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('#linkedin-hidden-message')).fontFamily.startsWith('FarsiFlow_vazirmatn'));
+    const values=await page.locator('#linkedin-hidden-message').evaluate(e=>({text:e.textContent,aria:e.parentElement.getAttribute('aria-hidden'),priority:e.style.getPropertyPriority('font-family')}));
+    assert.equal(values.text,'تولدت مبارک، محمد عزیز');assert.equal(values.aria,'true');assert.equal(values.priority,'important');
+  });
+  await check('paragraph language, English-leading Persian, list and table cells',async()=>{for(const id of ['fa','leading','list','cell','th'])assert.equal(await page.locator('#'+id).evaluate(e=>getComputedStyle(e).direction),'rtl');assert.equal(await page.locator('#en').evaluate(e=>getComputedStyle(e).direction),'ltr');});
+  await check('font is loaded with Persian-only Unicode range; Latin fallback preserved',async()=>{assert.ok(await page.evaluate(()=>document.fonts.check('16px FarsiFlow_vazirmatn','سلام')));const faces=await page.evaluate(()=>[...document.fonts].filter(f=>f.family==='FarsiFlow_vazirmatn').map(f=>({range:f.unicodeRange,weight:f.weight})));assert.equal(faces.length,2);assert.ok(faces.every(f=>f.range.includes('U+600-6FF') && !f.range.includes('U+0-FF')));});
+  await check('code, inline code, formula, links and emails isolated LTR',async()=>{for(const id of ['pre','code','inline','math','link','email'])assert.equal(await page.locator('#'+id).evaluate(e=>getComputedStyle(e).direction),'ltr');assert.match(await page.locator('#code').evaluate(e=>getComputedStyle(e).fontFamily),/monospace/);assert.equal(await page.locator('#link').evaluate(e=>getComputedStyle(e).unicodeBidi),'isolate');});
+  await check('no text edits, no hidden controls, no table column or flex layout reversal',async()=>{assert.equal(await page.locator('#root').textContent(),original);assert.equal(await page.locator('#root bdi').count(),0);assert.equal(await page.locator('#table').evaluate(e=>getComputedStyle(e).direction),'ltr');assert.equal(await page.locator('#layout').evaluate(e=>getComputedStyle(e).direction),'ltr');assert.equal(await page.locator('#ignored').getAttribute('data-ff-font'),null);});
+  await check('editor direction auto without password/email styling',async()=>{for(const id of ['editor','rich'])assert.equal(await page.locator('#'+id).getAttribute('dir'),'auto');for(const id of ['password','emailInput'])assert.equal(await page.locator('#'+id).getAttribute('data-ff-editor'),null);await page.locator('#editor').fill('API برای نوشتن متن فارسی کاربرد دارد.');assert.equal(await page.locator('#editor').inputValue(),'API برای نوشتن متن فارسی کاربرد دارد.');});
+  await check('streaming, inserted paragraphs and deleted nodes handled',async()=>{await page.locator('#stream').evaluate(e=>e.firstChild.nodeValue='ChatGPT برای نوشتن و خواندن متن‌های فارسی کاربرد دارد.');await page.waitForFunction(()=>document.querySelector('#stream').dataset.ffDir==='rtl');await page.locator('#root').evaluate(e=>{const p=document.createElement('p');p.id='new';p.textContent='یک پاراگراف تازه با API';e.append(p);});await page.waitForFunction(()=>document.querySelector('#new').dataset.ffDir==='rtl');await page.locator('#gone').evaluate(e=>e.remove());});
+  await check('120% scale and line height remain stable after repeated mutations',async()=>{await page.evaluate(()=>__set({sites:{'chatgpt.com':{scale:120,lineHeight:1.8}}}));await page.waitForFunction(()=>getComputedStyle(document.querySelector('#fa')).fontSize==='19.2px');for(let i=0;i<5;i++)await page.locator('#fa').evaluate(e=>e.append(' فارسی'));await page.waitForTimeout(150);assert.equal(await page.locator('#fa').evaluate(e=>getComputedStyle(e).fontSize),'19.2px');assert.equal(await page.locator('#nested').evaluate(e=>getComputedStyle(e).fontSize),'19.2px');});
+  await check('settings changes restore old styling before applying new font',async()=>{await page.evaluate(()=>__set({sites:{'chatgpt.com':{font:'sahel',scale:100}}}));await page.waitForFunction(()=>document.querySelector('#fa').style.getPropertyValue('--ff-family')==='FarsiFlow_sahel');assert.equal(await page.locator('#fa').evaluate(e=>getComputedStyle(e).fontSize),'16px');});
+  await check('per-site CSS exclusions restore selected content and retain other prose',async()=>{await page.evaluate(()=>__set({sites:{'chatgpt.com':{exclusions:'#fa'}}}));await page.waitForFunction(()=>!document.querySelector('#fa').hasAttribute('data-ff-font') && document.querySelector('#leading').dataset.ffDir==='rtl');assert.equal(await page.locator('#latin').getAttribute('data-ff-inline'),null);});
+  await check('disabling restores original editor attributes and all style markers',async()=>{await page.evaluate(()=>__set({sites:{'chatgpt.com':{enabled:false}}}));await page.waitForFunction(()=>!document.querySelector('#farsiflow-styles'));assert.equal(await page.locator('#editor').getAttribute('dir'),'ltr');assert.equal(await page.locator('#rich').getAttribute('dir'),'ltr');assert.equal(await page.locator('[data-ff-font],[data-ff-dir],[data-ff-size]').count(),0);});
+  await check('reinjecting is idempotent',async()=>{await page.evaluate(()=>__set({sites:{}}));await page.waitForFunction(()=>document.querySelector('#fa').dataset.ffDir==='rtl');await page.evaluate(fs.readFileSync(path.join(root,'extension/content.js'),'utf8'));await page.waitForFunction(()=>document.querySelector('#fa').dataset.ffDir==='rtl');assert.equal(await page.locator('#farsiflow-styles').count(),1);});
+  for(const host of ['chatgpt.com','gemini.google.com','claude.ai'])await check(host+' message selector adapter',async()=>{await load('https://'+host+'/fixture');assert.equal(await page.locator('#en').getAttribute('data-ff-dir'),'ltr');assert.equal(await page.locator('#layout').getAttribute('data-ff-dir'),null);});
+  await check('strict page style/font CSP still allows byte fonts and constructed CSS',async()=>{await load('https://chatgpt.com/csp');assert.equal(await page.locator('#fa').evaluate(e=>getComputedStyle(e).direction),'rtl');assert.ok(await page.evaluate(()=>document.fonts.check('16px FarsiFlow_vazirmatn','سلام')));});
+  const bytes=fs.readFileSync(path.join(root,'extension/fonts/Vazirmatn-Regular.woff2'));
+  await check('uploaded font bytes load inside a content document',async()=>{await page.evaluate(({data,size})=>__set({fonts:[{id:'custom-test-font',kind:'file',name:'Test',data,size,weight:400}],defaults:{...FFCore.DEFAULTS,font:'custom-test-font'}}),{data:bytes.toString('base64'),size:bytes.length});await page.waitForFunction(()=>document.querySelector('#fa').style.getPropertyValue('--ff-family')==='FarsiFlow_custom_test_font');assert.ok(await page.evaluate(()=>document.fonts.check('16px FarsiFlow_custom_test_font','سلام')));});
+  await check('revoking site permission stops rendering and restores the page',async()=>{await page.evaluate(()=>{__mock.allowed=false;__farsiFlow.refresh();});await page.waitForFunction(()=>!document.querySelector('#farsiflow-styles'));assert.equal(await page.locator('[data-ff-font]').count(),0);});
+  const options=await context.newPage();await options.addInitScript(mock,{config:C.DEFAULTS,allowed:false});await options.goto('http://127.0.0.1/extension/options.html');
+  await check('options saves display defaults through actual UI',async()=>{await options.locator('#font').selectOption('sahel');await options.getByRole('button',{name:'ذخیرهٔ تنظیمات',exact:true}).click();await options.waitForFunction(()=>document.querySelector('#notice').textContent.includes('ذخیره'));assert.equal(await options.evaluate(()=>__mock.data.defaults.font),'sahel');});
+  await check('AI access request occurs inside a user gesture',async()=>{await options.locator('#aiSites button').first().click();await options.waitForFunction(()=>__mock.requests.length===1);assert.equal(await options.evaluate(()=>__mock.requests[0].userGesture),true);assert.ok(await options.evaluate(()=>__mock.data.sites['chatgpt.com'].enabled));});
+  await check('file upload validates font and stores bytes locally',async()=>{await options.locator('#fontName').fill('وزیرمتن شخصی');await options.locator('#fontFile').setInputFiles(path.join(root,'extension/fonts/Vazirmatn-Regular.woff2'));await options.locator('#fontRights').check();await options.getByRole('button',{name:'افزودن فایل فونت',exact:true}).click();await options.waitForFunction(()=>document.querySelector('#notice').textContent.includes('فونت اضافه'));assert.equal(await options.evaluate(()=>__mock.data.fonts.length),1);});
+  await options.evaluate(()=>window.scrollTo(0,0));await options.screenshot({path:path.join(root,'store-assets/options-1280x800.png')});
+  const demo=await context.newPage();await demo.goto('http://127.0.0.1/extension/demo.html');await demo.locator('#toggle').click();await demo.screenshot({path:path.join(root,'store-assets/bidi-lab-1280x800.png')});
+  await check('demo keeps source text identical across display modes',async()=>{const text=await demo.locator('#samples').textContent();await demo.locator('#toggle').click();assert.equal(await demo.locator('#samples').textContent(),text);});
+  await check('all fixture and UI pages have zero uncaught errors',async()=>assert.deepEqual(errors,[]));
+  fs.writeFileSync(path.join(root,'docs/renderer-test-results.json'),JSON.stringify({date:new Date().toISOString(),browser:browser.version(),method:'Real Chromium renderer; extension APIs mocked; controlled adapters, not live accounts',nativeMV3IntegrationTested:false,liveAuthenticatedSitesTested:false,results},null,2));
+  await browser.close();
+})().catch(async e=>{console.error(e);if(browser)await browser.close();process.exitCode=1;});
