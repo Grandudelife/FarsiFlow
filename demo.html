@@ -1,0 +1,20 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>آزمایشگاه فارسی‌یار</title><link rel="stylesheet" href="ui.css"><style>.sample{font:18px/1.9 Arial,sans-serif;direction:ltr;text-align:left}.sample p{margin:16px 0}.sample pre{direction:ltr;text-align:left;overflow:auto;background:#142d28;color:#def4e8;border-radius:12px;padding:16px;font:14px/1.8 monospace}.sample table{width:100%;border-collapse:collapse}.sample td,.sample th{border:1px solid var(--line);padding:10px}.sample h3{margin-top:20px}.sample li{margin:10px 0}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:22px 0}.sample input,.sample textarea{font-family:Arial,sans-serif}.sample blockquote{border-inline-start:3px solid var(--accent);padding-inline-start:16px}.sample .math{font-family:serif;font-style:italic}.sample .icon{font-family:monospace}.tag{font-size:12px;color:var(--muted);direction:rtl;text-align:right;margin-top:20px}.narrow{max-width:950px}</style></head><body><div class="layout narrow"><header class="top"><div class="brand"><img src="icons/48.png" alt=""><div><h1>آزمایشگاه متن ترکیبی</h1><div class="wordmark" dir="ltr">FARSIFLOW / BIDI LAB</div></div></div><a href="options.html">تنظیمات</a></header><p class="intro muted">نمونه‌های کنترل‌شده برای مقایسهٔ نمایش. این صفحه محیط واقعی سرویس‌های هوش مصنوعی نیست. متن نمونه و نتیجهٔ کپی در هر دو حالت یکسان باقی می‌مانند.</p>
+<div class="toolbar"><button id="toggle" class="primary">نمایش اصلاح‌شده</button><button id="stream">آزمایش پاسخ در حال تولید</button><span class="pill" id="demoStatus">نمایش اصلی</span></div>
+<article class="card sample markdown" id="samples">
+<div class="tag">فارسی + نام محصول + پرانتز</div><p id="fa">برای کار با <strong>ChatGPT</strong> و <strong>Gemini</strong>، گزینهٔ «تنظیمات» (نسخهٔ <code>v2.4</code>) را انتخاب کنید.</p>
+<div class="tag">جملهٔ فارسی با شروع انگلیسی</div><p id="leading">FarsiFlow برای مطالعهٔ متن‌های فارسی و انگلیسی در کنار هم طراحی شده است.</p>
+<div class="tag">پاراگراف انگلیسی مستقل</div><p id="en">This paragraph stays left to right. The Persian product name is «فارسی‌یار».</p>
+<div class="tag">لینک، ایمیل، قیمت و تاریخ</div><p>راهنما: <a href="https://example.com/docs?q=fa&v=2">example.com/docs?q=fa&amp;v=2</a>، ایمیل: <a href="mailto:hello@example.com">hello@example.com</a>؛ قیمت ۱۲۵٬۰۰۰ تومان، تخفیف ۲۰٪، تاریخ ۱۴۰۵/۰۷/۱۵.</p>
+<div class="tag">فهرست و کد درون‌خطی</div><ol><li>پکیج <code>npm install example</code> را نصب کنید.</li><li>مقدار <code>API_KEY</code> را در تنظیمات وارد کنید.</li><li>Run the build and check the output.</li></ol>
+<div class="tag">جدول؛ ترتیب ستون‌ها حفظ می‌شود</div><table><thead><tr><th>محصول</th><th>وضعیت</th></tr></thead><tbody><tr><td>نسخهٔ <strong>Pro</strong></td><td>فعال برای ۳ کاربر</td></tr><tr><td>English column</td><td>Ready</td></tr></tbody></table>
+<div class="tag">کد؛ تورفتگی و فونت اصلی حفظ می‌شود</div><pre id="code"><code>const title = "سلام دنیا";
+function greet(name) {
+  return `Hello, ${name}!`;
+}
+console.log(greet("Sara"));</code></pre>
+<div class="tag">فرمول + نقل‌قول</div><p>رابطهٔ انرژی: <span class="katex math" role="math">E = mc²</span>؛ سپس نتیجه را ثبت کنید.</p><blockquote><p>متن فارسی داخل نقل‌قول با واژهٔ <em>Design</em> خوانا می‌ماند.</p></blockquote>
+<div class="tag">کادر نوشتن؛ فارسی و انگلیسی در خطوط جدا</div><textarea id="editor" rows="4" aria-label="کادر آزمایش">سلام؛ لطفاً دربارهٔ API توضیح بده.
+Explain the API in English.
+نسخهٔ جدید (v2.4) چه تغییراتی دارد؟</textarea>
+<div class="tag">پاسخ پویا</div><p id="streaming">پاسخ نمونه اینجا نمایش داده می‌شود.</p>
+</article><footer><span class="muted">رندر با CSS و FontFace؛ بدون درج کاراکتر پنهان در متن.</span></footer></div><script src="core.js"></script><script src="demo.js"></script></body></html>

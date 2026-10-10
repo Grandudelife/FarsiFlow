@@ -1,0 +1,17 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>فارسی‌یار</title><link rel="stylesheet" href="ui.css"></head><body class="popup">
+<header class="brand"><img src="icons/48.png" alt=""><div><h1>فارسی‌یار</h1><div class="wordmark" dir="ltr">FARSIFLOW · 1.0.4</div></div><span class="pill" id="adapter">مرورگر</span></header>
+<div class="divider"></div><div id="host" class="host"></div>
+<div id="notice" class="status" role="status" aria-live="polite"></div>
+<div id="engineStatus" class="status" role="status" aria-live="polite"></div>
+<button id="grant" class="primary" style="width:100%">فعال‌سازی برای این سایت</button>
+<form id="settings" hidden>
+<label class="check"><input id="enabled" type="checkbox">فعال برای این سایت</label>
+<label class="field"><span>فونت فارسی</span><select id="font"></select></label>
+<label class="field"><span>جهت متن</span><select id="direction"><option value="smart">هوشمند؛ تشخیص زبان هر پاراگراف</option><option value="first">خودکار؛ اولین حرف متن</option><option value="rtl">راست‌چین برای متن دارای فارسی</option><option value="off">فقط فونت؛ جهت اصلی سایت</option></select></label>
+<label class="field"><span class="row between">اندازهٔ متن فارسی <output id="scaleValue">100%</output></span><input id="scale" type="range" min="80" max="160" step="5"></label>
+<label class="field"><span>فاصلهٔ خطوط</span><select id="lineHeight"><option value="0">فاصلهٔ اصلی سایت</option><option value="1.6">۱٫۶ — فشرده</option><option value="1.8">۱٫۸ — خوانا</option><option value="2">۲ — باز</option><option value="2.2">۲٫۲ — بسیار باز</option></select></label>
+<div class="preview" aria-label="نمونهٔ متن"><p>متن فارسی با <span class="latin">English</span>؛ نسخهٔ <code>v2.4</code> خواناتر می‌شود.</p><p dir="ltr" class="latin">English stays left to right.</p></div>
+<button id="resetSite" type="button" style="width:100%;margin-top:12px">بازگشت به تنظیمات پیش‌فرض</button></form>
+<button id="retryApply" type="button" hidden style="width:100%;margin-top:12px">اعمال دوباره روی صفحه</button>
+<footer><button id="openOptions">همهٔ تنظیمات + افزودن فونت</button><a href="demo.html" target="_blank">آزمایش متن</a></footer>
+<script src="core.js"></script><script src="ui-common.js"></script><script src="popup.js"></script></body></html>
